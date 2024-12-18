@@ -18,14 +18,14 @@ Node *createNode(Node *parent, int8 *path) {
 	errno = NoError;
 	
 	int16 size = sizeof(struct s_node);
-	Node *n = (Node *)malloc((int)size);
-	zero((int8 *)n, size);
+	Node *newNode = (Node *)malloc((int)size);
+	zero((int8 *)newNode, size);
 	
-	parent->west = n;
-	n->tag = TagNode;
-	n->north = parent;
-	strncpy((char *)n->path, (char *)path, 255);
-	return n;
+	parent->west = newNode;
+	newNode->tag = TagNode;
+	newNode->north = parent;
+	strncpy((char *)newNode->path, (char *)path, 255);
+	return newNode;
 }
 
 Leaf *find_last_linear(Node *parent) {
@@ -42,24 +42,26 @@ Leaf *find_last_linear(Node *parent) {
 
 Leaf *createLeaf(Node *parent, int8 *key, int8 *value, int16 count) {
 	assert(parent);
-	Leaf *l = find_last(parent);
-	int16 size = sizeof(struct s_leaf);
-	Leaf *new = (Leaf *)malloc(size);
-	assert(new);
 
-	if (!l) parent->east = new;
-	else l->east = new;
-	zero((int8 *)new, size);
-	new->tag = TagLeaf;
-	new->west = !l ? (Tree *)parent : (Tree *)l;
+	Leaf *lastLeaf = find_last(parent);
+	Leaf *newLeaf = (Leaf *)malloc(sizeof(struct s_leaf));
+	assert(newLeaf);
+
+	if (!lastLeaf) parent->east = newLeaf;
+	else lastLeaf->east = newLeaf;
+
+	zero((int8 *)newLeaf, sizeof(struct s_leaf));
+
+	newLeaf->tag = TagLeaf;
+	newLeaf->west = !lastLeaf ? (Tree *)parent : (Tree *)lastLeaf;
 	
-	strncpy((char*)new->key, (char *)key, 127);
-	new->value = (int8*)malloc(count);
-	zero(new->value, count);
-	assert(new->value);
-	strncpy((char *)new->value, (char *)value, count);
-	new->size = count;
-	return new;
+	strncpy((char*)newLeaf->key, (char *)key, 127);
+	newLeaf->value = (int8*)malloc(count);
+	zero(newLeaf->value, count);
+	assert(newLeaf->value);
+	strncpy((char *)newLeaf->value, (char *)value, count);
+	newLeaf->size = count;
+	return newLeaf;
 }
 
 int main() {
@@ -71,16 +73,15 @@ int main() {
 
 	int8 *key = (int8 *)"lebron";
 	int8 *value = (int8 *)"wefwe723fn23";
-	int16 size = (int16)strlen((char*)value);
-	Leaf *l1 = createLeaf(n2, key, value, size);
+	Leaf *l1 = createLeaf(n2, key, value, (int16)strlen((char*)value));
 	assert(l1);
 	printf("%s\n", l1->value);	
 	
 	key = (int8 *)"jordan";
 	value = (int8 *)"fewofjweo32399";
-	size = (int16)strlen((char*)value);
-	Leaf *l2 = createLeaf(n2, key, value, size);
+	Leaf *l2 = createLeaf(n2, key, value, (int16)strlen((char*)value));
 	assert(l2);
+	
 	printf("%s\n", l2->key);
 
 
