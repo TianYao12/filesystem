@@ -18,43 +18,39 @@ void childLoop(Client *cli) {
     return;
 }
 
-void mainLoop(int s) {
-    struct sockaddr_in cli;
+void mainLoop(int sock) {
+    struct sockaddr_in clientAddress;
     int32 len;
-    int s2;
-    char *ip;
-    int16 port;
-    Client *client;
-    pid_t pid;
 
-    s2 = accept(s, (struct sockaddr *)&cli, (unsigned int*)&len);
-    if (s2 < 0) {
+    int client_socket = accept(sock, (struct sockaddr *)&clientAddress, (unsigned int*)&len);
+    if (client_socket < 0) {
         sleep(1);
         return;
     }
-    port = (int16)htons((int)cli.sin_port);
-    ip = inet_ntoa(cli.sin_addr);
-    printf("Connection from %s:%d\n", ip, port);
 
-    client = (Client *)malloc(sizeof(struct s_client));
+    int16 port = (int16)htons((int)clientAddress.sin_port);
+    char *ip = inet_ntoa(clientAddress.sin_addr);
+    printf("Client Connection from %s:%d\n", ip, port);
+
+    Client *client = (Client *)malloc(sizeof(struct s_client));
     assert(client);
-
     zero((int8 *)client, sizeof(struct s_client));
-    client->s = s;
+    
+    client->s = sock;
     client->port = port;
     strncpy(client->ip, ip, 15);
 
-    pid = fork();
+    pid_t pid = fork();
     if (pid) {
         free(client);
         return;
     } else {
-        dprintf(s2, "100 Connected to Cache22 server\n");
+        dprintf(client_socket, "100 Connected to Cache22 server\n");
         ccontinuation = true;
         while (ccontinuation) {
             childLoop(client);
         }
-        close(s2);
+        close(client_socket);
         free(client);
         return;
     }
@@ -62,44 +58,41 @@ void mainLoop(int s) {
 }
 
 int initServer(int16 port) {
-    struct sockaddr_in sock;
-    int s;
+    struct sockaddr_in addressInfo;
+    addressInfo.sin_family = AF_INET; 
+    addressInfo.sin_port = htons((int)port); // htons ensures port number is in network byte order
+    addressInfo.sin_addr.s_addr = inet_addr(HOST); // inet_addr converts a dotted-decimal string to uint32_t in network byte order
 
-    sock.sin_family = AF_INET;
-    sock.sin_port = htons((int)port);
-    sock.sin_addr.s_addr = inet_addr(HOST);
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    assert(serverSocket >= 0);
 
-    s = socket(AF_INET, SOCK_STREAM, 0);
-    assert(s >= 0);
-
-    if (bind(s, (struct sockaddr *)&sock, sizeof(sock))) {
+    if (bind(serverSocket, (struct sockaddr *)&addressInfo, sizeof(addressInfo))) {
         perror("Bind failed");
         assert(false);
     }
-    if (listen(s, 20)) {
+    if (listen(serverSocket, 20)) {
         perror("Listen failed");
         assert(false);
     }
     printf("Server listening on %s:%d\n", HOST, port);
     fflush(stdout);
-    return s;
+    return serverSocket;
 }
 
 int main(int argc, char *argv[]) {
     char *sport;
 
-    if (argc < 2) {
-        sport = PORT;
-    } else {
-        sport = argv[1];
-    }
-    int s = initServer((int16)atoi(sport));
+    if (argc < 2) sport = PORT;
+    else sport = argv[1];
 
+    int sock = initServer((int16)atoi(sport));
     scontinuation = true;
+
     while (scontinuation) {
-        mainLoop(s);
+        mainLoop(sock);
     }
+
     printf("Shutting down");
-    close(s);
+    close(sock);
     return 0;
 }
