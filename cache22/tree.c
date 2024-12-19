@@ -34,8 +34,6 @@ void printTree(int fd, Tree *_root) {
     }
 }
 
-
-
 int8 *indent(int8 n) {
     static int8 buf[256];
 
@@ -69,42 +67,70 @@ Node *createNode(Node *parent, int8 *path) {
 	return newNode;
 }
 
-Leaf *findLastLinear(Node *parent) {
-	assert(parent);	
-	errno = NoError;
-	Leaf *l;
+Node *findNodeLinear(int8 *path) {
+    Node *p;
+    for (p = (Node *)&root; p; p = p->west) {
+        if (!strcmp((char *)p->path, (char *)path)) {
+            return p;
+        }
+    }
+    return NULL;
+}
 
-	if (!parent->east) return (Leaf *)0;
-	for (l = parent->east; l->east; l = l->east) 
-	assert(l);
-	return l;	
+Leaf *findLeafLinear(int8 *path, int8 *key) {
+    Node *n = findNodeLinear(path);
+    if (!n) return NULL;
+
+    for (Leaf *l = n->east; l; l = l->east) {
+        if (!strcmp((char *)l->key, (char *)key)) {
+            return l;
+        }
+    }
+    return NULL;
+}
+
+Leaf *findLastLinear(Node *parent) {
+    assert(parent);
+
+    if (!parent->east) return NULL;
+
+    Leaf *l = parent->east;
+    while (l->east) {
+        l = l->east;
+    }
+    return l;
 }
 
 Leaf *createLeaf(Node *parent, int8 *key, int8 *value, int16 count) {
-	assert(parent);
+    assert(parent);
 
-	Leaf *lastLeaf = findLast(parent);
-	Leaf *newLeaf = (Leaf *)malloc(sizeof(struct s_leaf));
-	assert(newLeaf);
+    Leaf *lastLeaf = findLastLinear(parent);
+    Leaf *newLeaf = (Leaf *)malloc(sizeof(struct s_leaf));
+    assert(newLeaf);
 
-	if (!lastLeaf) parent->east = newLeaf;
-	else lastLeaf->east = newLeaf;
+    if (!lastLeaf) parent->east = newLeaf;
+    else lastLeaf->east = newLeaf;
 
-	zero((int8 *)newLeaf, sizeof(struct s_leaf));
+    zero((int8 *)newLeaf, sizeof(struct s_leaf));
 
-	newLeaf->tag = TagLeaf;
-	newLeaf->west = !lastLeaf ? (Tree *)parent : (Tree *)lastLeaf;
-	
-	strncpy((char*)newLeaf->key, (char *)key, 127);
-	newLeaf->value = (int8*)malloc(count);
-	zero(newLeaf->value, count);
-	assert(newLeaf->value);
-	strncpy((char *)newLeaf->value, (char *)value, count);
-	newLeaf->size = count;
-	return newLeaf;
+    newLeaf->tag = TagLeaf;
+    newLeaf->west = !lastLeaf ? (Tree *)parent : (Tree *)lastLeaf;
+
+    strncpy((char *)newLeaf->key, (char *)key, 127);
+    newLeaf->value = (int8 *)malloc(count);
+    zero(newLeaf->value, count);
+    strncpy((char *)newLeaf->value, (char *)value, count);
+    newLeaf->size = count;
+    return newLeaf;
+}
+
+int8 *lookupLinear(int8 *path, int8 *key) {
+	Leaf *p = findLeaf(path, key);
+	return p ? p->value : (int8 *)0;
 }
 
 int main() {
+	int8 *test;
 	Node *n = createNode((Node *)&root, (int8 *)"/Base");
 	assert(n);
 
@@ -125,6 +151,10 @@ int main() {
 	// printf("%s\n", l2->key);
 
 	printTree(1, &root);
+	test = lookup((int8 *)"/Base/Base1",
+	(int8 *)"jordan");
+	if (test) printf("%s\n", test);
+	else printf("No bro\n");
 	// printf("%p %p\n", n, n2);
 	free(n2);
 	free(n);

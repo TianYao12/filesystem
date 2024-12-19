@@ -15,7 +15,10 @@
 
 static Nullptr nullptr = NULL;
 
-#define findLast(x)		findLastLinear(x);
+#define findLeaf(x, y)		findLeafLinear(x, y)
+#define findNode(x)			findNodeLinear(x)
+#define findLast(x)			findLastLinear(x)
+#define lookup(x, y)		lookupLinear(x, y)
 #define reterr(x) \
 	errno = (x); \
 	return nullptr;
@@ -63,6 +66,9 @@ typedef union u_tree Tree;
 void printTree(int, Tree*);
 int8 *indent(int8);
 void zero(int8*, int16);
+Leaf *findLeafLinear(int8*, int8*);
+int8 *lookupLinear(int8*, int8*);
+Node *findNodeLinear(int8*);
 Node *createNode(Node*, int8*);
 Leaf *findLastLinear(Node*);
 Leaf *createLeaf(Node*, int8*, int8*, int16);
