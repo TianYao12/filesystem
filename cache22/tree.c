@@ -129,36 +129,94 @@ int8 *lookupLinear(int8 *path, int8 *key) {
 	return p ? p->value : (int8 *)0;
 }
 
+int8 *examplePath(int8 path) {
+	int32 x;
+	static int8 buf[256];
+	int8 c;
+
+	zero(buf, 256);
+	for (c = 'a'; c <= path; c++) {
+		x = (int32)strlen((char *)buf);
+		*(buf + x++) = '/';
+		*(buf + x) = c;
+	}
+	return buf;
+}
+
+int8 *exampleDuplicate(int8 *str) {
+	int16 n, x;
+	static int8 buf[256];
+
+	zero(buf, 256);
+	strncpy((char *)buf, (char *)str, 255);
+	n = (int16)strlen((char *)buf);
+	x = n * 2;
+	if (x > 254) return buf;
+	else strncpy((char *)buf+n, strdup((char *)buf), 255);
+	return buf;
+}
+
+int32 exampleLeaves() {
+	FILE *fd;
+	int32 x;
+	int8 buf[256];
+	int8 *path, *val;
+	Node *n; 
+
+	// fd = open(ExampleFile, O_RDONLY);
+	fd = fopen(ExampleFile, "r");
+	assert(fd);
+
+	zero(buf, 256);
+	int y = 0;
+	// while((x = read(fd, buf, 255)) > 0) {
+	while (fgets((char *)buf, 255, fd)) {
+		x = (int32)strlen((char *)buf);
+		*(buf + x - 1) = 0;
+		path = examplePath(*buf);
+		n = findNode(path);
+		if (!n) {
+			zero(buf, 256);
+			continue;
+		} 
+		val = exampleDuplicate(buf);
+		createLeaf(n, buf, val, (int16)strlen((char *)val));
+		y++;
+		zero(buf, 256);
+	}
+	fclose(fd);
+	return y;
+
+}
+
+Tree *exampleTree() {
+	int8 c;
+	Node *n, *p;
+	int8 path[256];
+	int32 x;
+
+	zero(path, 256);
+	x = 0;
+
+	for (n = (Node *)&root, c = 'a'; c <= 'z'; c++) {
+		x = (int32)strlen((char *)path);
+		*(path + x++) = '/';
+		*(path + x) = c;
+		printf("%s\n", path);
+
+		p = n;
+		n = createNode(p, path);
+	}
+	return (Tree *)&root;
+
+}
+
 int main() {
-	int8 *test;
-	Node *n = createNode((Node *)&root, (int8 *)"/Base");
-	assert(n);
+	Tree *example = exampleTree();
+	int32 x = exampleLeaves();
 
-	Node *n2 = createNode (n, (int8 *)"/Base/Base1");
-	assert(n2);
+	(void)x; 
 
-	int8 *key = (int8 *)"lebron";
-	int8 *value = (int8 *)"wefwe723fn23";
-	Leaf *l1 = createLeaf(n2, key, value, (int16)strlen((char*)value));
-	assert(l1);
-	// printf("%s\n", l1->value);	
-	
-	key = (int8 *)"jordan";
-	value = (int8 *)"fewofjweo32399";
-	Leaf *l2 = createLeaf(n2, key, value, (int16)strlen((char*)value));
-	assert(l2);
-	
-	// printf("%s\n", l2->key);
-
-	printTree(1, &root);
-	test = lookup((int8 *)"/Base/Base1",
-	(int8 *)"jordan");
-	if (test) printf("%s\n", test);
-	else printf("No bro\n");
-	// printf("%p %p\n", n, n2);
-	free(n2);
-	free(n);
-	
-	printf("%p\n", (void *)&root);
-	return 0;
+	printTree(1, example);
+	return 0; 
 }

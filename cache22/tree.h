@@ -6,11 +6,15 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define TagRoot 	1 /* 00 01 */
 #define TagNode 	2 /* 00 10 */
 #define TagLeaf		4 /* 01 00 */
+
 #define NoError		0
+#define ExampleFile		"./words.txt"
+
 #define Nullptr void*
 
 static Nullptr nullptr = NULL;
@@ -72,4 +76,10 @@ Node *findNodeLinear(int8*);
 Node *createNode(Node*, int8*);
 Leaf *findLastLinear(Node*);
 Leaf *createLeaf(Node*, int8*, int8*, int16);
+Tree *exampleTree();
+// int8 *duplicate(int8*); 
+
+int32 exampleLeaves(void);
+int8 *examplePath(int8);
+int8 *exampleDuplicate(int8*);
 int main(void);
