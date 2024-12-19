@@ -15,10 +15,17 @@
 
 static Nullptr nullptr = NULL;
 
-#define find_last(x)		find_last_linear(x);
+#define findLast(x)		findLastLinear(x);
 #define reterr(x) \
 	errno = (x); \
 	return nullptr;
+
+#define Print(x) \
+		zero(buf, 256); \
+		strncpy((char *)buf, (char *)(x), 255); \
+		size = (int16)strlen((char *)buf); \
+		if (size) \
+			write(fd, (char *)buf, size)
 
 typedef unsigned int int32;
 typedef unsigned short int int16;
@@ -52,3 +59,11 @@ union u_tree {
 };
 
 typedef union u_tree Tree;
+
+void printTree(int, Tree*);
+int8 *indent(int8);
+void zero(int8*, int16);
+Node *createNode(Node*, int8*);
+Leaf *findLastLinear(Node*);
+Leaf *createLeaf(Node*, int8*, int8*, int16);
+int main(void);

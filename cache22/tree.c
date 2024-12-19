@@ -8,6 +8,47 @@ Tree root = { .n = {
 	.path = "/"	
 }};
 
+void printTree(int fd, Tree *_root) {
+    int8 indentation = 0;
+    int8 buf[256];
+    int16 size;
+    Node *n;
+    Leaf *l;
+
+    for (n = (Node *)_root; n; n = n->west) {
+        Print(indent(indentation++));
+        Print(n->path);
+        Print("\n");
+        
+        if (n->east) {
+            for (l = n->east; l; l = l->east) { // Traverse from first leaf to last
+                Print(indent(indentation));
+                Print(n->path);
+                Print("/");
+                Print(l->key);
+                Print(" -> ");
+                write(fd, (char *)l->value, (int)l->size);
+                Print("\n");
+            }
+        }
+    }
+}
+
+
+
+int8 *indent(int8 n) {
+    static int8 buf[256];
+
+    if (n < 1) return (int8 *)"";
+    assert(n < 120);
+    zero(buf, 256);
+
+    for (int16 i = 0; i < n; i++) {
+        strncpy((char *)&buf[i * 2], "  ", 2);
+    }
+    return buf;
+}
+
 void zero(int8 *str, int16 size) {
 	for (int16 n = 0; n < size; ++n) str[n] = 0;
 	return;
@@ -28,13 +69,12 @@ Node *createNode(Node *parent, int8 *path) {
 	return newNode;
 }
 
-Leaf *find_last_linear(Node *parent) {
+Leaf *findLastLinear(Node *parent) {
 	assert(parent);	
 	errno = NoError;
-
-	if (!parent) reterr(NoError);
-	
 	Leaf *l;
+
+	if (!parent->east) return (Leaf *)0;
 	for (l = parent->east; l->east; l = l->east) 
 	assert(l);
 	return l;	
@@ -43,7 +83,7 @@ Leaf *find_last_linear(Node *parent) {
 Leaf *createLeaf(Node *parent, int8 *key, int8 *value, int16 count) {
 	assert(parent);
 
-	Leaf *lastLeaf = find_last(parent);
+	Leaf *lastLeaf = findLast(parent);
 	Leaf *newLeaf = (Leaf *)malloc(sizeof(struct s_leaf));
 	assert(newLeaf);
 
@@ -75,19 +115,19 @@ int main() {
 	int8 *value = (int8 *)"wefwe723fn23";
 	Leaf *l1 = createLeaf(n2, key, value, (int16)strlen((char*)value));
 	assert(l1);
-	printf("%s\n", l1->value);	
+	// printf("%s\n", l1->value);	
 	
 	key = (int8 *)"jordan";
 	value = (int8 *)"fewofjweo32399";
 	Leaf *l2 = createLeaf(n2, key, value, (int16)strlen((char*)value));
 	assert(l2);
 	
-	printf("%s\n", l2->key);
+	// printf("%s\n", l2->key);
 
-
-	printf("%p %p\n", n, n2);
-	free(n);
+	printTree(1, &root);
+	// printf("%p %p\n", n, n2);
 	free(n2);
+	free(n);
 	
 	printf("%p\n", (void *)&root);
 	return 0;
